@@ -2,6 +2,7 @@ package osutil
 
 /*
 #include <stdio.h>
+#include <stdlib.h>
 */
 import "C"
 
@@ -9,6 +10,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"unsafe"
 )
 
 // Capture captures stderr and stdout of a given function call.
@@ -61,7 +63,10 @@ func CaptureWithCGo(call func()) ([]byte, error) {
 		return nil, err
 	}
 
-	f := C.fdopen((C.int)(w.Fd()), C.CString("w"))
+	cw := C.CString("w")
+	defer C.free(unsafe.Pointer(cw))
+
+	f := C.fdopen((C.int)(w.Fd()), cw)
 
 	os.Stderr, os.Stdout = w, w
 	C.stderr, C.stdout = f, f
