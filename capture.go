@@ -7,6 +7,7 @@ package osutil
 import "C"
 
 import (
+	"errors"
 	"bytes"
 	"io"
 	"os"
@@ -24,6 +25,7 @@ func Capture(call func()) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer r.Close()
 
 	os.Stderr, os.Stdout = w, w
 
@@ -62,11 +64,16 @@ func CaptureWithCGo(call func()) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer r.Close()
 
 	cw := C.CString("w")
 	defer C.free(unsafe.Pointer(cw))
 
 	f := C.fdopen((C.int)(w.Fd()), cw)
+	if (f == nil) {
+		return nil, errors.New("fdopen returned nil")
+	}
+	defer C.fclose(f)
 
 	os.Stderr, os.Stdout = w, w
 	C.stderr, C.stdout = f, f
