@@ -11,15 +11,22 @@ import (
 	"errors"
 	"io"
 	"os"
+	"sync"
 	"unsafe"
 )
 
 var (
+	// ErrFDOpenFailed indicates that C's fdopen has failed
 	ErrFDOpenFailed = errors.New("fdopen returned nil")
 )
 
+var lockStdFileDescriptorsSwapping sync.Mutex // FIXME our solution is not concurrent-safe. Find a better solution because this might be a bottleneck in the future.
+
 // Capture captures stderr and stdout of a given function call.
 func Capture(call func()) (output []byte, err error) {
+	lockStdFileDescriptorsSwapping.Lock()
+	defer lockStdFileDescriptorsSwapping.Unlock()
+
 	originalStdErr, originalStdOut := os.Stderr, os.Stdout
 	defer func() {
 		os.Stderr, os.Stdout = originalStdErr, originalStdOut
@@ -62,6 +69,9 @@ func Capture(call func()) (output []byte, err error) {
 
 // CaptureWithCGo captures stderr and stdout as well as stderr and stdout of C of a given function call.
 func CaptureWithCGo(call func()) (output []byte, err error) {
+	lockStdFileDescriptorsSwapping.Lock()
+	defer lockStdFileDescriptorsSwapping.Unlock()
+
 	originalStdErr, originalStdOut := os.Stderr, os.Stdout
 	originalCStdErr, originalCStdOut := C.stderr, C.stdout
 	defer func() {
