@@ -16,6 +16,7 @@ import (
 )
 
 var (
+	// ErrFDOpenFailed indicates that C's fdopen has failed
 	ErrFDOpenFailed = errors.New("fdopen returned nil")
 )
 
