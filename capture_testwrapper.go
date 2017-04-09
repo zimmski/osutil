@@ -21,7 +21,7 @@ func testCapture(t *testing.T) {
 		fmt.Println("Go")
 		C.printSomething()
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.Contains(t, string(out), "Go")
 	assert.NotContains(t, string(out), "C")
@@ -32,7 +32,7 @@ func testCaptureWithCGo(t *testing.T) {
 		fmt.Println("Go")
 		C.printSomething()
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.Contains(t, string(out), "Go")
 	assert.Contains(t, string(out), "C")
