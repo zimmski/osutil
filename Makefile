@@ -7,7 +7,7 @@ ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 $(eval $(ARGS):;@:) # turn arguments into do-nothing targets
 export ARGS
 
-all: dependencies install lint test-verbose
+all: install-dependencies install-tools install lint test-verbose
 .PHONY: all
 
 clean:
@@ -15,19 +15,28 @@ clean:
 	go clean -i -race $(PKG)/...
 .PHONY: clean
 
-dependencies:
-	go get -t -v ./...
-	go build -v ./...
-.PHONY: dependencies
+clean-coverage:
+	find $(ROOT_DIR) | grep .coverprofile | xargs rm
+.PHONY: clean-coverage
 
 install:
 	go install -v ./...
 .PHONY: install
 
+install-dependencies:
+	go get -t -v ./...
+	go build -v ./...
+.PHONY: install-dependencies
+
 install-tools:
 	# Install linting tools
 	go get -u -v github.com/golang/lint/...
 	go get -u -v github.com/kisielk/errcheck/...
+
+	# Install code coverage tools
+	go get -u -v github.com/onsi/ginkgo/ginkgo/...
+	go get -u -v github.com/modocache/gover/...
+	go get -u -v github.com/mattn/goveralls/...
 .PHONY: install-tools
 
 lint:
@@ -37,6 +46,10 @@ lint:
 test:
 	go test -race -test.timeout $(UNIT_TEST_TIMEOUT)s $(PKG_TEST)
 .PHONY: test
+
+test-with-coverage:
+	ginkgo -r -cover -race -skipPackage="testdata" $(PKG_TEST)
+.PHONY: test-with-coverage
 
 test-verbose:
 	go test -race -test.timeout $(UNIT_TEST_TIMEOUT)s -v $(PKG_TEST)
