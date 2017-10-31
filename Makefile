@@ -7,7 +7,7 @@ ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 $(eval $(ARGS):;@:) # turn arguments into do-nothing targets
 export ARGS
 
-all: dependencies install test-verbose
+all: dependencies install lint test-verbose
 .PHONY: all
 
 clean:
@@ -23,6 +23,16 @@ dependencies:
 install:
 	go install -v ./...
 .PHONY: install
+
+install-tools:
+	# Install linting tools
+	go get -u -v github.com/golang/lint/...
+	go get -u -v github.com/kisielk/errcheck/...
+.PHONY: install-tools
+
+lint:
+	$(ROOT_DIR)/scripts/lint.sh
+.PHONY: lint
 
 test:
 	go test -race -test.timeout $(UNIT_TEST_TIMEOUT)s $(PKG_TEST)
