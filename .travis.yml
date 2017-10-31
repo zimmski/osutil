@@ -1,0 +1,21 @@
+language: go
+
+os:
+  - linux
+
+go:
+  - 1.8.x
+  - 1.9.x
+
+sudo: false
+
+install:
+  - make install-dependencies
+  - make install-tools
+  - make install
+
+script:
+  - make lint
+  - make test-with-coverage
+  - gover
+  - if [ "$TRAVIS_SECURE_ENV_VARS" = "true" ]; then goveralls -coverprofile=gover.coverprofile -service=travis-ci; fi
