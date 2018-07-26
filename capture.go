@@ -8,16 +8,11 @@ import "C"
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"os"
 	"sync"
+	"syscall"
 	"unsafe"
-)
-
-var (
-	// ErrFDOpenFailed indicates that C's fdopen has failed
-	ErrFDOpenFailed = errors.New("fdopen returned nil")
 )
 
 var lockStdFileDescriptorsSwapping sync.Mutex // FIXME our solution is not concurrent-safe. Find a better solution because this might be a bottleneck in the future.
@@ -72,11 +67,29 @@ func CaptureWithCGo(call func()) (output []byte, err error) {
 	lockStdFileDescriptorsSwapping.Lock()
 	defer lockStdFileDescriptorsSwapping.Unlock()
 
-	originalStdErr, originalStdOut := os.Stderr, os.Stdout
-	originalCStdErr, originalCStdOut := C.stderr, C.stdout
+	originalStdout, e := syscall.Dup(syscall.Stdout)
+	if e != nil {
+		return nil, e
+	}
+
+	originalStderr, e := syscall.Dup(syscall.Stderr)
+	if e != nil {
+		return nil, e
+	}
+
 	defer func() {
-		os.Stderr, os.Stdout = originalStdErr, originalStdOut
-		C.stderr, C.stdout = originalCStdErr, originalCStdOut
+		if e := syscall.Dup2(originalStdout, syscall.Stdout); e != nil {
+			err = e
+		}
+		if e := syscall.Close(originalStdout); e != nil {
+			err = e
+		}
+		if e := syscall.Dup2(originalStderr, syscall.Stderr); e != nil {
+			err = e
+		}
+		if e := syscall.Close(originalStderr); e != nil {
+			err = e
+		}
 	}()
 
 	r, w, err := os.Pipe()
@@ -93,14 +106,12 @@ func CaptureWithCGo(call func()) (output []byte, err error) {
 	cw := C.CString("w")
 	defer C.free(unsafe.Pointer(cw))
 
-	f := C.fdopen((C.int)(w.Fd()), cw)
-	if f == nil {
-		return nil, ErrFDOpenFailed
+	if e := syscall.Dup2(int(w.Fd()), syscall.Stdout); e != nil {
+		return nil, e
 	}
-	defer C.fclose(f)
-
-	os.Stderr, os.Stdout = w, w
-	C.stderr, C.stdout = f, f
+	if e := syscall.Dup2(int(w.Fd()), syscall.Stderr); e != nil {
+		return nil, e
+	}
 
 	out := make(chan []byte)
 	go func() {
@@ -116,11 +127,17 @@ func CaptureWithCGo(call func()) (output []byte, err error) {
 
 	call()
 
-	C.fflush(f)
+	C.fflush(C.stdout)
 
 	err = w.Close()
 	if err != nil {
 		return nil, err
+	}
+	if e := syscall.Close(syscall.Stdout); e != nil {
+		return nil, e
+	}
+	if e := syscall.Close(syscall.Stderr); e != nil {
+		return nil, e
 	}
 
 	return <-out, err
