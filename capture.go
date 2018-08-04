@@ -12,7 +12,6 @@ import (
 	"os"
 	"sync"
 	"syscall"
-	"unsafe"
 )
 
 var lockStdFileDescriptorsSwapping sync.Mutex // FIXME our solution is not concurrent-safe. Find a better solution because this might be a bottleneck in the future.
@@ -102,9 +101,6 @@ func CaptureWithCGo(call func()) (output []byte, err error) {
 			err = e
 		}
 	}()
-
-	cw := C.CString("w")
-	defer C.free(unsafe.Pointer(cw))
 
 	if e := syscall.Dup2(int(w.Fd()), syscall.Stdout); e != nil {
 		return nil, e
