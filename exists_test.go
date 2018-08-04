@@ -7,10 +7,10 @@ import (
 )
 
 func TestDirExists(t *testing.T) {
-	assert.Nil(t, DirExists("/"))
-	assert.Nil(t, DirExists("../osutil"))
+	assert.NoError(t, DirExists("/"))
+	assert.NoError(t, DirExists("../osutil"))
 
-	assert.NotNil(t, DirExists("hey"))
+	assert.Error(t, DirExists("hey"))
 
 	assert.Equal(t, ErrNotADirectory, DirExists("exists.go"))
 }
