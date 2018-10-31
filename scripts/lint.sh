@@ -19,4 +19,8 @@ echo "golint:"
 OUT=$(golint $PKG/... | grep --invert-match -E "(method DiffPrettyHtml should be DiffPrettyHTML)")
 if [ -n "$OUT" ]; then echo "$OUT"; PROBLEM=1; fi
 
+echo "megacheck:"
+OUT=$(megacheck $PKG/...)
+if [ -n "$OUT" ]; then echo "$OUT"; PROBLEM=1; fi
+
 if [ -n "$PROBLEM" ]; then exit 1; fi
