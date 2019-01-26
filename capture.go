@@ -36,6 +36,12 @@ func Capture(call func()) (output []byte, err error) {
 		if e != nil {
 			err = e
 		}
+		if w != nil {
+			e = w.Close()
+			if err != nil {
+				err = e
+			}
+		}
 	}()
 
 	lockStdFileDescriptorsSwapping.Lock()
@@ -46,6 +52,11 @@ func Capture(call func()) (output []byte, err error) {
 
 	out := make(chan []byte)
 	go func() {
+		defer func() {
+			// If there is a panic in the function call, copying from "r" does not work anymore.
+			_ = recover()
+		}()
+
 		var b bytes.Buffer
 
 		_, err := io.Copy(&b, r)
@@ -62,6 +73,7 @@ func Capture(call func()) (output []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
+	w = nil
 
 	return <-out, err
 }
@@ -122,6 +134,12 @@ func CaptureWithCGo(call func()) (output []byte, err error) {
 		if e != nil {
 			err = e
 		}
+		if w != nil {
+			e = w.Close()
+			if err != nil {
+				err = e
+			}
+		}
 	}()
 
 	lockStdFileDescriptorsSwapping.Lock()
@@ -141,6 +159,11 @@ func CaptureWithCGo(call func()) (output []byte, err error) {
 
 	out := make(chan []byte)
 	go func() {
+		defer func() {
+			// If there is a panic in the function call, copying from "r" does not work anymore.
+			_ = recover()
+		}()
+
 		var b bytes.Buffer
 
 		_, err := io.Copy(&b, r)
@@ -163,6 +186,8 @@ func CaptureWithCGo(call func()) (output []byte, err error) {
 
 		return nil, err
 	}
+	w = nil
+
 	if e := syscall.Close(syscall.Stdout); e != nil {
 		lockStdFileDescriptorsSwapping.Unlock()
 
