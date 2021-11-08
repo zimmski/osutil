@@ -28,12 +28,16 @@ func testCapture(t *testing.T) {
 }
 
 func testCaptureWithCGo(t *testing.T) {
-	out, err := CaptureWithCGo(func() {
-		fmt.Println("Go")
-		C.printSomething()
-	})
+	out, err := testCaptureWithCGoWrapper()
 	assert.NoError(t, err)
 
 	assert.Contains(t, string(out), "Go")
 	assert.Contains(t, string(out), "C")
+}
+
+func testCaptureWithCGoWrapper() ([]byte, error) {
+	return CaptureWithCGo(func() {
+		fmt.Println("Go")
+		C.printSomething()
+	})
 }
