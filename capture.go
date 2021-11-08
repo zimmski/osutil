@@ -14,17 +14,27 @@ import (
 	"syscall"
 )
 
-var lockStdFileDescriptorsSwapping sync.Mutex
+var capturingFileDescLock = &sync.Mutex{}
 
 // Capture captures stderr and stdout of a given function call.
+//
+// Note that because this requires modifying stdout and stderr,
+// which are global to the process,
+// this function (and the invocation of call) are wrapped in a mutex.
+// (note also that this mutex is shared between Capture and CaptureWithCGo).
+//
+// Otherwise it would be possible for output to contain incorrect bytes,
+// either missing what was written during call,
+// and/or having the results of other invocations.
 func Capture(call func()) (output []byte, err error) {
+	capturingFileDescLock.Lock()
+	defer func() {
+		capturingFileDescLock.Unlock()
+	}()
+
 	originalStdErr, originalStdOut := os.Stderr, os.Stdout
 	defer func() {
-		lockStdFileDescriptorsSwapping.Lock()
-
 		os.Stderr, os.Stdout = originalStdErr, originalStdOut
-
-		lockStdFileDescriptorsSwapping.Unlock()
 	}()
 
 	r, w, err := os.Pipe()
@@ -44,11 +54,7 @@ func Capture(call func()) (output []byte, err error) {
 		}
 	}()
 
-	lockStdFileDescriptorsSwapping.Lock()
-
 	os.Stderr, os.Stdout = w, w
-
-	lockStdFileDescriptorsSwapping.Unlock()
 
 	out := make(chan []byte)
 	go func() {
@@ -79,50 +85,45 @@ func Capture(call func()) (output []byte, err error) {
 }
 
 // CaptureWithCGo captures stderr and stdout as well as stderr and stdout of C of a given function call.
+//
+// Note that because this requires modifying stdout and stderr,
+// which are global to the process,
+// this function (and the invocation of call) are wrapped in a mutex.
+// (note also that this mutex is shared between Capture and CaptureWithCGo).
+//
+// Otherwise it would be possible for output to contain incorrect bytes,
+// either missing what was written during call,
+// and/or having the results of other invocations.
+
 func CaptureWithCGo(call func()) (output []byte, err error) {
-	lockStdFileDescriptorsSwapping.Lock()
+	capturingFileDescLock.Lock()
+	defer func() {
+		capturingFileDescLock.Unlock()
+	}()
 
 	originalStdout, e := syscall.Dup(syscall.Stdout)
 	if e != nil {
-		lockStdFileDescriptorsSwapping.Unlock()
-
 		return nil, e
 	}
 
 	originalStderr, e := syscall.Dup(syscall.Stderr)
 	if e != nil {
-		lockStdFileDescriptorsSwapping.Unlock()
-
 		return nil, e
 	}
 
-	lockStdFileDescriptorsSwapping.Unlock()
-
 	defer func() {
-		lockStdFileDescriptorsSwapping.Lock()
-
 		if e := syscall.Dup2(originalStdout, syscall.Stdout); e != nil {
-			lockStdFileDescriptorsSwapping.Unlock()
-
 			err = e
 		}
 		if e := syscall.Close(originalStdout); e != nil {
-			lockStdFileDescriptorsSwapping.Unlock()
-
 			err = e
 		}
 		if e := syscall.Dup2(originalStderr, syscall.Stderr); e != nil {
-			lockStdFileDescriptorsSwapping.Unlock()
-
 			err = e
 		}
 		if e := syscall.Close(originalStderr); e != nil {
-			lockStdFileDescriptorsSwapping.Unlock()
-
 			err = e
 		}
-
-		lockStdFileDescriptorsSwapping.Unlock()
 	}()
 
 	r, w, err := os.Pipe()
@@ -142,20 +143,12 @@ func CaptureWithCGo(call func()) (output []byte, err error) {
 		}
 	}()
 
-	lockStdFileDescriptorsSwapping.Lock()
-
 	if e := syscall.Dup2(int(w.Fd()), syscall.Stdout); e != nil {
-		lockStdFileDescriptorsSwapping.Unlock()
-
 		return nil, e
 	}
 	if e := syscall.Dup2(int(w.Fd()), syscall.Stderr); e != nil {
-		lockStdFileDescriptorsSwapping.Unlock()
-
 		return nil, e
 	}
-
-	lockStdFileDescriptorsSwapping.Unlock()
 
 	out := make(chan []byte)
 	go func() {
@@ -176,30 +169,19 @@ func CaptureWithCGo(call func()) (output []byte, err error) {
 
 	call()
 
-	lockStdFileDescriptorsSwapping.Lock()
-
 	C.fflush(C.stdout)
 
 	err = w.Close()
 	if err != nil {
-		lockStdFileDescriptorsSwapping.Unlock()
-
 		return nil, err
 	}
 	w = nil
 
 	if e := syscall.Close(syscall.Stdout); e != nil {
-		lockStdFileDescriptorsSwapping.Unlock()
-
 		return nil, e
 	}
 	if e := syscall.Close(syscall.Stderr); e != nil {
-		lockStdFileDescriptorsSwapping.Unlock()
-
 		return nil, e
 	}
-
-	lockStdFileDescriptorsSwapping.Unlock()
-
 	return <-out, err
 }
