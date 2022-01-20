@@ -2,6 +2,7 @@ package osutil
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,6 +34,29 @@ func TestCaptureWithCGo(t *testing.T) {
 			testCaptureWithCGo(t)
 		}
 	}))
+}
+
+func TestCaptureWithCGoMutexBehavior(t *testing.T) {
+	numRoutines := 50
+	wg := &sync.WaitGroup{}
+	wg.Add(numRoutines)
+	results := make([]string, numRoutines)
+	errors := make([]error, numRoutines)
+	for j := 0; j < numRoutines; j++ {
+		go func(jc int) {
+			defer wg.Done()
+			b, e := testCaptureWithCGoWrapper()
+			results[jc] = string(b)
+			errors[jc] = e
+		}(j)
+	}
+	wg.Wait()
+	for gi, err := range errors {
+		assert.NoErrorf(t, err, "goroutine %d error", gi)
+	}
+	for gi, s := range results {
+		assert.Equalf(t, s, "Go\nC\n", "goroutine %d", gi)
+	}
 }
 
 func TestCaptureWithCGoWithPanic(t *testing.T) {
