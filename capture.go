@@ -8,6 +8,7 @@ import "C"
 
 import (
 	"bytes"
+	"golang.org/x/sys/unix"
 	"io"
 	"os"
 	"sync"
@@ -112,13 +113,13 @@ func CaptureWithCGo(call func()) (output []byte, err error) {
 	}
 
 	defer func() {
-		if e := syscall.Dup2(originalStdout, syscall.Stdout); e != nil {
+		if e := unix.Dup2(originalStdout, syscall.Stdout); e != nil {
 			err = e
 		}
 		if e := syscall.Close(originalStdout); e != nil {
 			err = e
 		}
-		if e := syscall.Dup2(originalStderr, syscall.Stderr); e != nil {
+		if e := unix.Dup2(originalStderr, syscall.Stderr); e != nil {
 			err = e
 		}
 		if e := syscall.Close(originalStderr); e != nil {
@@ -143,10 +144,10 @@ func CaptureWithCGo(call func()) (output []byte, err error) {
 		}
 	}()
 
-	if e := syscall.Dup2(int(w.Fd()), syscall.Stdout); e != nil {
+	if e := unix.Dup2(int(w.Fd()), syscall.Stdout); e != nil {
 		return nil, e
 	}
-	if e := syscall.Dup2(int(w.Fd()), syscall.Stderr); e != nil {
+	if e := unix.Dup2(int(w.Fd()), syscall.Stderr); e != nil {
 		return nil, e
 	}
 
