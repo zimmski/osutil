@@ -1,18 +1,25 @@
 export ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-export PKG := github.com/zimmski/osutil
 
+export PACKAGE_BASE := github.com/zimmski/osutil
 export UNIT_TEST_TIMEOUT := 480
 
 ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 $(eval $(ARGS):;@:) # turn arguments into do-nothing targets
 export ARGS
 
+ifdef ARGS
+	HAS_ARGS := "1"
+else
+	HAS_ARGS :=
+	PACKAGE := $(PACKAGE_BASE)/...
+endif
+
 all: install-dependencies install-tools install lint test-verbose
 .PHONY: all
 
 clean:
-	go clean -i $(PKG)/...
-	go clean -i -race $(PKG)/...
+	go clean -i $(PACKAGE)
+	go clean -i -race $(PACKAGE)
 .PHONY: clean
 
 clean-coverage:
@@ -20,12 +27,12 @@ clean-coverage:
 .PHONY: clean-coverage
 
 install:
-	go install -v ./...
+	go install -v $(PACKAGE)
 .PHONY: install
 
 install-dependencies:
-	go get -t -v ./...
-	go test -i -v ./...
+	go get -t -v $(PACKAGE)
+	go test -i -v $(PACKAGE)
 .PHONY: install-dependencies
 
 install-tools:
@@ -44,13 +51,13 @@ lint:
 .PHONY: lint
 
 test:
-	go test -race -test.timeout $(UNIT_TEST_TIMEOUT)s $(PKG)
+	go test -race -test.timeout $(UNIT_TEST_TIMEOUT)s $(PACKAGE)
 .PHONY: test
 
 test-with-coverage:
-	ginkgo -r -cover -race -skipPackage="testdata" $(PKG)
+	ginkgo -r -cover -race -skipPackage="testdata" $(PACKAGE)
 .PHONY: test-with-coverage
 
 test-verbose:
-	go test -race -test.timeout $(UNIT_TEST_TIMEOUT)s -v $(PKG_TEST)
+	go test -race -test.timeout $(UNIT_TEST_TIMEOUT)s -v $(PACKAGE)
 .PHONY: test-verbose
