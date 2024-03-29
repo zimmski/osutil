@@ -1,29 +1,17 @@
 package osutil
 
 import (
-	"syscall"
+	"time"
 )
 
-// SetRLimitFiles temporarily changes the file descriptor resource limit while calling the given function.
-func SetRLimitFiles(limit uint64, call func(limit uint64)) (err error) {
-	var tmp syscall.Rlimit
-	if err = syscall.Getrlimit(syscall.RLIMIT_NOFILE, &tmp); err != nil {
-		return nil
-	}
-	defer func() {
-		if err == nil {
-			err = syscall.Setrlimit(syscall.RLIMIT_NOFILE, &tmp)
-		}
-	}()
-
-	if err = syscall.Setrlimit(syscall.RLIMIT_NOFILE, &syscall.Rlimit{
-		Cur: limit,
-		Max: tmp.Max,
-	}); err != nil {
-		return err
-	}
-
-	call(limit)
-
-	return nil
+// ProcessTreeLimits holds limits to apply to the current process's resource usage, including the resource usage of its descendant processes.
+type ProcessTreeLimits struct {
+	// MaxMemoryInMiB holds the limit for the memory usage of the current process and all descendants in 1024-based mebibytes.
+	// Zero means no limit.
+	MaxMemoryInMiB uint
+	// OnOutOfMemory may or may not run when the memory limit is reached, depending on the enforcement strategy. If it runs, the process will not be killed automatically and the function should end the process.
+	OnMemoryLimitReached func(currentMemoryInMiB uint, maxMemoryInMiB uint)
+	// WatchdogInterval holds the amount of time to sleep between checks if the limits have been exceeded, if a watchdog strategy is used.
+	// The default is two seconds.
+	WatchdogInterval time.Duration
 }

@@ -30,7 +30,6 @@ install-dependencies:
 
 install-tools:
 	# Install linting tools
-	go get -u -v golang.org/x/lint/golint/...
 	go get -u -v github.com/kisielk/errcheck/...
 	go get -u -v honnef.co/go/tools/cmd/megacheck
 
@@ -45,11 +44,11 @@ lint:
 .PHONY: lint
 
 test:
-	go test -race -test.timeout $(UNIT_TEST_TIMEOUT)s $(PKG_TEST)
+	go test -race -test.timeout $(UNIT_TEST_TIMEOUT)s $(PKG)
 .PHONY: test
 
 test-with-coverage:
-	ginkgo -r -cover -race -skipPackage="testdata" $(PKG_TEST)
+	ginkgo -r -cover -race -skipPackage="testdata" $(PKG)
 .PHONY: test-with-coverage
 
 test-verbose:

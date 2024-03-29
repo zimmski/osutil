@@ -1,7 +1,6 @@
 package osutil
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -14,10 +13,10 @@ func TestCopyFile(t *testing.T) {
 
 	assert.NoError(t, CopyFile(src, dst))
 
-	s, err := ioutil.ReadFile(src)
+	s, err := os.ReadFile(src)
 	assert.NoError(t, err)
 
-	d, err := ioutil.ReadFile(dst)
+	d, err := os.ReadFile(dst)
 	assert.NoError(t, err)
 
 	assert.Equal(t, s, d)
