@@ -9,6 +9,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/termie/go-shutil v0.0.0-20140729215957-bcacb06fecae
 	github.com/ulikunitz/xz v0.5.11
+	github.com/yuin/goldmark v1.7.0
 	golang.org/x/sys v0.18.0
 )
 
