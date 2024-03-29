@@ -292,3 +292,35 @@ var whiteSpaceRe = regexp.MustCompile(`^[\s\t\n]*$`)
 func IsWhitespace(data string) (isWhitespace bool) {
 	return whiteSpaceRe.MatchString(data)
 }
+
+// GuardedBlocks extracts blocks of consecutive lines that are guarded by the given begin and end lines.
+// The guarding lines are included in the results. If no end guard is given, the start guard is used as end guard as well.
+func GuardedBlocks(data string, begin *regexp.Regexp, end *regexp.Regexp) (blocks []string) {
+	if end == nil {
+		end = begin
+	}
+
+	var block strings.Builder
+	inBlock := false
+	for _, line := range strings.Split(data, "\n") {
+		if begin.MatchString(line) && !inBlock {
+			inBlock = true
+
+			block.WriteString(line)
+			block.WriteString("\n")
+		} else if end.MatchString(line) && inBlock {
+			inBlock = false
+
+			block.WriteString(line)
+			block.WriteString("\n")
+
+			blocks = append(blocks, block.String())
+			block = strings.Builder{}
+		} else if inBlock {
+			block.WriteString(line)
+			block.WriteString("\n")
+		}
+	}
+
+	return blocks
+}

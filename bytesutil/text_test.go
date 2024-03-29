@@ -1,9 +1,11 @@
 package bytesutil
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRemoveLine(t *testing.T) {
@@ -245,5 +247,170 @@ func TestRewriteWebsiteContent(t *testing.T) {
 		ExpectedDataReplaced: StringTrimIndentations(`
 			<!DOCTYPE html><html><head><title>https://symflower.com/en/</title><link rel="canonical" href="https://symflower.com/en/"/><meta name="robots" content="noindex"><meta charset="utf-8" /><meta http-equiv="refresh" content="0; url=https://symflower.com/en/" /></head><body><video autoplay loop muted controls class='img-fluid rounded' src="/foobar/video/cli/Generate-Test-Template.mp4" poster="/foobar/video/cli/Generate-Test-Template.png"></video></body></html>
 		`),
+	})
+}
+
+func TestGuardedBlock(t *testing.T) {
+	type testCase struct {
+		Name string
+
+		Data  string
+		Begin string
+		End   string
+
+		ExpectedBlocks []string
+	}
+
+	validate := func(t *testing.T, tc *testCase) {
+		t.Run(tc.Name, func(t *testing.T) {
+			beginRe, err := regexp.Compile(tc.Begin)
+			require.NoError(t, err)
+			var endRe *regexp.Regexp
+			if tc.End != "" {
+				endRe, err = regexp.Compile(tc.End)
+				require.NoError(t, err)
+			}
+			data := StringTrimIndentations(tc.Data)
+
+			actualBlocks := GuardedBlocks(data, beginRe, endRe)
+
+			assert.Equal(t, tc.ExpectedBlocks, actualBlocks)
+		})
+	}
+
+	validate(t, &testCase{
+		Name: "No Block",
+
+		Data: `
+			DATA
+		`,
+		Begin: "begin",
+		End:   "end",
+
+		ExpectedBlocks: nil,
+	})
+
+	validate(t, &testCase{
+		Name: "Identic Start and End Guards",
+
+		Data: `
+			begin
+			DATA
+			begin
+		`,
+		Begin: "begin",
+
+		ExpectedBlocks: []string{
+			"begin\nDATA\nbegin\n",
+		},
+	})
+
+	validate(t, &testCase{
+		Name: "Different Start and End Guards",
+
+		Data: `
+			begin
+			DATA
+			end
+		`,
+		Begin: "begin",
+		End:   "end",
+
+		ExpectedBlocks: []string{
+			"begin\nDATA\nend\n",
+		},
+	})
+
+	validate(t, &testCase{
+		Name: "Multiple Blocks",
+
+		Data: `
+			begin
+			DATA1
+			end
+
+			begin
+			DATA2
+			end
+		`,
+		Begin: "begin",
+		End:   "end",
+
+		ExpectedBlocks: []string{
+			"begin\nDATA1\nend\n",
+			"begin\nDATA2\nend\n",
+		},
+	})
+
+	validate(t, &testCase{
+		Name: "Unopened Block",
+
+		Data: `
+			DATA1
+			end
+
+			begin
+			DATA2
+			end
+		`,
+		Begin: "begin",
+		End:   "end",
+
+		ExpectedBlocks: []string{
+			"begin\nDATA2\nend\n",
+		},
+	})
+
+	validate(t, &testCase{
+		Name: "Unclosed Block",
+
+		Data: `
+			begin
+			DATA1
+			end
+
+			begin
+			DATA2
+		`,
+		Begin: "begin",
+		End:   "end",
+
+		ExpectedBlocks: []string{
+			"begin\nDATA1\nend\n",
+		},
+	})
+
+	validate(t, &testCase{
+		Name: "Duplicated Begin Guard",
+
+		Data: `
+			begin
+			begin
+			DATA
+			end
+		`,
+		Begin: "begin",
+		End:   "end",
+
+		ExpectedBlocks: []string{
+			"begin\nbegin\nDATA\nend\n",
+		},
+	})
+
+	validate(t, &testCase{
+		Name: "Duplicated End Guard",
+
+		Data: `
+			begin
+			DATA
+			end
+			end
+		`,
+		Begin: "begin",
+		End:   "end",
+
+		ExpectedBlocks: []string{
+			"begin\nDATA\nend\n",
+		},
 	})
 }
