@@ -6,6 +6,18 @@ import (
 	"strings"
 )
 
+// EnvironMap returns a map of the current environment variables.
+func EnvironMap() (environMap map[string]string) {
+	environ := os.Environ()
+	environMap = make(map[string]string, len(environ))
+	for _, e := range environ {
+		kv := strings.SplitN(e, "=", 2)
+		environMap[kv[0]] = kv[1]
+	}
+
+	return environMap
+}
+
 // EnvOrDefault returns the environment variable with the given key, or the default value if the key is not defined.
 func EnvOrDefault(key string, defaultValue string) (value string) {
 	if v, ok := os.LookupEnv(key); ok {
