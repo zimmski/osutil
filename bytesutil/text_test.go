@@ -2,6 +2,7 @@ package bytesutil
 
 import (
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -270,7 +271,10 @@ func TestGuardedBlock(t *testing.T) {
 				endRe, err = regexp.Compile(tc.End)
 				require.NoError(t, err)
 			}
-			data := StringTrimIndentations(tc.Data)
+			data := tc.Data
+			if strings.HasPrefix(data, "\n") {
+				data = StringTrimIndentations(tc.Data)
+			}
 
 			actualBlocks := GuardedBlocks(data, beginRe, endRe)
 
@@ -411,6 +415,17 @@ func TestGuardedBlock(t *testing.T) {
 
 		ExpectedBlocks: []string{
 			"begin\nDATA\nend\n",
+		},
+	})
+
+	validate(t, &testCase{
+		Name: "No final Newline",
+
+		Data:  "begin\nDATA\nbegin",
+		Begin: "begin",
+
+		ExpectedBlocks: []string{
+			"begin\nDATA\nbegin",
 		},
 	})
 }
