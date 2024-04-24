@@ -302,7 +302,8 @@ func GuardedBlocks(data string, begin *regexp.Regexp, end *regexp.Regexp) (block
 
 	var block strings.Builder
 	inBlock := false
-	for _, line := range strings.Split(data, "\n") {
+	lines := strings.Split(data, "\n")
+	for i, line := range lines {
 		if begin.MatchString(line) && !inBlock {
 			inBlock = true
 
@@ -312,7 +313,9 @@ func GuardedBlocks(data string, begin *regexp.Regexp, end *regexp.Regexp) (block
 			inBlock = false
 
 			block.WriteString(line)
-			block.WriteString("\n")
+			if i != len(lines)-1 {
+				block.WriteString("\n")
+			}
 
 			blocks = append(blocks, block.String())
 			block = strings.Builder{}
