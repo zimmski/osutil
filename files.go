@@ -144,3 +144,12 @@ func ReplaceVariablesInFile(filePath string, variables map[string]string) (err e
 
 	return os.WriteFile(filePath, d, 0)
 }
+
+// WriteFile writes the given content into the given file while creating all necessary directories in between.
+func WriteFile(filePath string, content []byte) (err error) {
+	if err := MkdirAll(filepath.Dir(filePath)); err != nil {
+		return err
+	}
+
+	return os.WriteFile(filePath, content, 0644)
+}
