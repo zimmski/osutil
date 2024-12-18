@@ -8,9 +8,8 @@ import (
 	"syscall"
 )
 
-// ContextWithInterrupt returns a context which is interruptible by signals "SIGTERM" and "SIGQUIT".
-// If the signal is sent once, then the returned context is cancelled.
-// If multiple signals are sent, then the program terminates via "os.Exit(1)".
+// ContextWithInterrupt returns a context which can be interrupted by signals "SIGTERM" and "SIGQUIT".
+// If the signal is sent once, then the returned context is cancelled. If multiple signals are sent, then the program terminates via "os.Exit(1)".
 func ContextWithInterrupt(ctx context.Context, logWriter io.Writer) (contextWithInterrupt context.Context, cancelContext context.CancelFunc) {
 	contextWithInterrupt, cancelContext = context.WithCancel(ctx)
 
