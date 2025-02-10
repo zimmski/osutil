@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+
+	pkgerrors "github.com/pkg/errors"
 )
 
 // ReplaceBytesInFile replaces a certain amount of occurrences of the given bytes in a file.
@@ -15,16 +17,20 @@ func ReplaceBytesInFile(filePathIn string, filePathOut string, search []byte, re
 
 	content, err := os.ReadFile(filePathIn)
 	if err != nil {
-		return err
+		return pkgerrors.Wrap(err, filePathIn)
 	}
 	fileMode, err := os.Stat(filePathIn)
 	if err != nil {
-		return err
+		return pkgerrors.Wrap(err, filePathIn)
 	}
 
 	contentReplaced := bytes.Replace(content, search, replace, n)
 
-	return os.WriteFile(filePathOut, contentReplaced, fileMode.Mode())
+	if err := os.WriteFile(filePathOut, contentReplaced, fileMode.Mode()); err != nil {
+		return pkgerrors.Wrap(err, filePathOut)
+	}
+
+	return nil
 }
 
 // ReplaceBytesInBinary replaces a certain amount of occurrences of the given bytes in a binary.
