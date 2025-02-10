@@ -3,6 +3,8 @@ package bytesutil
 import (
 	"bytes"
 	"os"
+
+	pkgerrors "github.com/pkg/errors"
 )
 
 // LineLengthsForFile returns a slice of the line lengths of the given data.
@@ -10,7 +12,7 @@ import (
 func LineLengthsForFile(filePath string) ([]uint, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.Wrap(err, filePath)
 	}
 
 	return LineLengths(data), nil

@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 
+	pkgerrors "github.com/pkg/errors"
 	"github.com/zimmski/osutil"
 )
 
@@ -270,19 +271,23 @@ func RewriteWebsiteContentDirectory(contentDirectoryPath string, defaultURL stri
 
 // SearchAndReplaceFile searches for occurrences of a given pattern in a file and replaces them accordingly.
 // Capturing groups can be referenced in the replace string by using $, i.e. $1 is the first capturing group.
-func SearchAndReplaceFile(file string, search *regexp.Regexp, replace string) (err error) {
-	content, err := os.ReadFile(file)
+func SearchAndReplaceFile(filePath string, search *regexp.Regexp, replace string) (err error) {
+	content, err := os.ReadFile(filePath)
 	if err != nil {
-		return err
+		return pkgerrors.Wrap(err, filePath)
 	}
-	info, err := os.Stat(file)
+	info, err := os.Stat(filePath)
 	if err != nil {
-		return err
+		return pkgerrors.Wrap(err, filePath)
 	}
 
 	replaced := search.ReplaceAllString(string(content), replace)
 
-	return os.WriteFile(file, []byte(replaced), info.Mode().Perm())
+	if err := os.WriteFile(filePath, []byte(replaced), info.Mode().Perm()); err != nil {
+		return pkgerrors.Wrap(err, filePath)
+	}
+
+	return nil
 }
 
 // whiteSpaceRe matches only whitespace content.
@@ -326,4 +331,20 @@ func GuardedBlocks(data string, begin *regexp.Regexp, end *regexp.Regexp) (block
 	}
 
 	return blocks
+}
+
+// Itemize itemizes a collection with the marker passed as parameter.
+func Itemize[S fmt.Stringer](collection []S, marker string) string {
+	var sb strings.Builder
+
+	for i, item := range collection {
+		sb.WriteString(marker)
+		sb.WriteString(" ")
+		sb.WriteString(item.String())
+		if i < len(collection)-1 {
+			sb.WriteString("\n")
+		}
+	}
+
+	return sb.String()
 }

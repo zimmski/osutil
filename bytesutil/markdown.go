@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 
+	pkgerrors "github.com/pkg/errors"
 	"github.com/yuin/goldmark"
 )
 
@@ -11,16 +12,16 @@ import (
 func RenderMarkdownFileToHTMLFile(markdownFilePath string, htmlFilePath string) (err error) {
 	data, err := os.ReadFile(markdownFilePath)
 	if err != nil {
-		return err
+		return pkgerrors.Wrap(err, markdownFilePath)
 	}
 
 	var html bytes.Buffer
 	if err := goldmark.Convert(data, &html); err != nil {
-		return err
+		return pkgerrors.Wrap(err, markdownFilePath)
 	}
 
 	if err := os.WriteFile(htmlFilePath, html.Bytes(), 0640); err != nil {
-		return err
+		return pkgerrors.Wrap(err, html.String())
 	}
 
 	return nil
