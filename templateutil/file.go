@@ -12,7 +12,7 @@ import (
 )
 
 // WriteTemplateToFile executes a template with the given data and saves the result into a file.
-func WriteTemplateToFile(filePath string, tmpl *template.Template, data any) error {
+func WriteTemplateToFile(filePath string, tmpl Template, data any) error {
 	var driver bytes.Buffer
 
 	err := tmpl.Execute(&driver, data)
