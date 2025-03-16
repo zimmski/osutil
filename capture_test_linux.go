@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCapture(t *testing.T) {
@@ -25,16 +26,24 @@ func TestCaptureRecursive(t *testing.T) {
 		// Use at least one more file descriptor than our current limit, so we make sure that there are no file descriptor leaks.
 		for i := 0; i <= int(limit); i++ {
 			out, err := Capture(func() {
-				fmt.Fprintf(os.Stdout, "1")
-				fmt.Fprintf(os.Stderr, "2")
-				fmt.Fprintf(os.Stdout, "3")
-				fmt.Fprintf(os.Stderr, "4")
+				_, err := fmt.Fprintf(os.Stdout, "1")
+				require.NoError(t, err)
+				_, err = fmt.Fprintf(os.Stderr, "2")
+				require.NoError(t, err)
+				_, err = fmt.Fprintf(os.Stdout, "3")
+				require.NoError(t, err)
+				_, err = fmt.Fprintf(os.Stdout, "4")
+				require.NoError(t, err)
 
 				out, err := Capture(func() {
-					fmt.Fprintf(os.Stdout, "A")
-					fmt.Fprintf(os.Stderr, "B")
-					fmt.Fprintf(os.Stdout, "C")
-					fmt.Fprintf(os.Stderr, "D")
+					_, err := fmt.Fprintf(os.Stdout, "A")
+					require.NoError(t, err)
+					_, err = fmt.Fprintf(os.Stderr, "B")
+					require.NoError(t, err)
+					_, err = fmt.Fprintf(os.Stdout, "C")
+					require.NoError(t, err)
+					_, err = fmt.Fprintf(os.Stderr, "D")
+					require.NoError(t, err)
 
 				})
 				assert.NoError(t, err)

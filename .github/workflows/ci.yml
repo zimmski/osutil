@@ -1,0 +1,27 @@
+name: CI
+
+on: ["push", "release"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: "Lint the repository"
+    uses: ./.github/workflows/job-lint.yml
+  test:
+    name: "Run tests and lint artifacts"
+    needs:
+      - lint
+    secrets: inherit
+    strategy:
+      fail-fast: false # Run the whole matrix for maximum information. No matter if we fail with one job early.
+      matrix:
+        os:
+          - "macOS-latest"
+          - "ubuntu-latest"
+          - "windows-latest"
+    uses: ./.github/workflows/job-test.yml
+    with:
+      os: ${{ matrix.os }}

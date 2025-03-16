@@ -20,15 +20,24 @@ func ContextWithInterrupt(ctx context.Context, logWriter io.Writer) (contextWith
 		for {
 			switch <-c {
 			case os.Interrupt, os.Kill:
-				io.WriteString(logWriter, "Received termination signal")
+				_, err := io.WriteString(logWriter, "Received termination signal")
+				if err != nil {
+					panic(err)
+				}
 				count++
 
 				if count == 1 {
-					io.WriteString(logWriter, "Canceling analysis and writing results")
+					_, err := io.WriteString(logWriter, "Canceling analysis and writing results")
+					if err != nil {
+						panic(err)
+					}
 
 					cancelContext()
 				} else {
-					io.WriteString(logWriter, "Exiting immediately")
+					_, err := io.WriteString(logWriter, "Exiting immediately")
+					if err != nil {
+						panic(err)
+					}
 
 					//revive:disable:deep-exit
 					os.Exit(1)

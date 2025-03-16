@@ -21,7 +21,7 @@ func CacheObjectWrite(cachePath string, identifier string, cacheObjectType Cache
 	cacheObjectPathRelative := cacheObjectPath(identifier)
 	cacheObjectPath := filepath.Join(cachePath, cacheObjectPathRelative)
 
-	if os.MkdirAll(cacheObjectPath, 0755); err != nil {
+	if err := os.MkdirAll(cacheObjectPath, 0755); err != nil {
 		return err
 	}
 
