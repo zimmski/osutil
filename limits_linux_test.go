@@ -26,7 +26,7 @@ func TestEnforceProcessTreeLimitsMemory(t *testing.T) {
 
 	validate := func(t *testing.T, tc *testCase) {
 		t.Run(tc.Name, func(t *testing.T) {
-			assert.NoError(t, exec.Command("go", "build", "-o", "limittest/memory", "limittest/memory.go").Run())
+			assert.NoError(t, exec.Command("go", "build", "-v", "-trimpath", "-o", "limittest/memory", "limittest/memory.go").Run())
 
 			cmd := exec.Command("limittest/memory", strconv.Itoa(int(tc.MemoryLimitInMiB)), strconv.Itoa(int(tc.MinMemoryToAllocateInMiB)))
 			out, programmErr := cmd.CombinedOutput()
