@@ -26,6 +26,11 @@ clean-coverage:
 	find $(ROOT_DIR) | grep .coverprofile | xargs rm
 .PHONY: clean-coverage
 
+editor: # Open our default IDE with the project's configuration.
+	@# WORKAROUND VS.code does not call Delve with absolute paths to files which it needs to set breakpoints. Until either Delve or VS.code have a fix we need to disable "-trimpath" which converts absolute to relative paths of Go builds which is a requirement for reproducible builds.
+	GOFLAGS="$(GOFLAGS) -trimpath=false" $(ROOT_DIR)/scripts/editor.sh
+.PHONY: editor
+
 install:
 	go install -v $(PACKAGE)
 .PHONY: install
