@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIsEnvEnabled(t *testing.T) {
@@ -18,8 +19,10 @@ func TestIsEnvEnabled(t *testing.T) {
 
 	validate := func(t *testing.T, tc *testCase) {
 		t.Run(tc.Value, func(t *testing.T) {
-			os.Setenv(envTestName, tc.Value)
-			defer os.Unsetenv(envTestName)
+			require.NoError(t, os.Setenv(envTestName, tc.Value))
+			defer func() {
+				require.NoError(t, os.Unsetenv(envTestName))
+			}()
 
 			actual := IsEnvEnabled(envTestName, tc.EnabledValues...)
 

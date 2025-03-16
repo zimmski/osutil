@@ -33,7 +33,9 @@ func ProgressBar(stream io.Writer, max int, description ...string) (progress *pr
 
 	os := []progressbar.Option{
 		progressbar.OptionOnCompletion(func() {
-			fmt.Fprint(stream, "\n")
+			if _, err := fmt.Fprint(stream, "\n"); err != nil {
+				panic(err)
+			}
 		}),
 		progressbar.OptionSetDescription(d),
 		progressbar.OptionShowIts(),
@@ -53,7 +55,9 @@ func ProgressBarBytes(stream io.Writer, length int, description ...string) (prog
 
 	os := []progressbar.Option{
 		progressbar.OptionOnCompletion(func() {
-			fmt.Fprint(stream, "\n")
+			if _, err := fmt.Fprint(stream, "\n"); err != nil {
+				panic(err)
+			}
 		}),
 		progressbar.OptionSetDescription(d),
 		progressbar.OptionShowBytes(true),
@@ -73,7 +77,9 @@ func ActivityIndicator(stream io.Writer, description ...string) (stopIndicator f
 
 	os := []progressbar.Option{
 		progressbar.OptionOnCompletion(func() {
-			fmt.Fprint(stream, "\n")
+			if _, err := fmt.Fprint(stream, "\n"); err != nil {
+				panic(err)
+			}
 		}),
 		progressbar.OptionSetDescription(d),
 		progressbar.OptionSetWriter(stream),
@@ -90,7 +96,9 @@ func ActivityIndicator(stream io.Writer, description ...string) (stopIndicator f
 			case <-runChannel:
 				return
 			default:
-				indicator.Add(1)
+				if err := indicator.Add(1); err != nil {
+					panic(err)
+				}
 			}
 
 			time.Sleep(100 * time.Millisecond)

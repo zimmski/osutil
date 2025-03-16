@@ -225,7 +225,11 @@ func ZipExtractFile(archiveFilePath string, destinationPath string) (err error) 
 	if err != nil {
 		return err
 	}
-	defer archive.Close()
+	defer func() {
+		if e := archive.Close(); e != nil {
+			err = errors.Join(err, e)
+		}
+	}()
 
 	for _, f := range archive.File {
 		filePath := filepath.Join(destinationPath, f.Name)
@@ -235,7 +239,9 @@ func ZipExtractFile(archiveFilePath string, destinationPath string) (err error) 
 			return
 		}
 		if f.FileInfo().IsDir() {
-			os.MkdirAll(filePath, os.ModePerm)
+			if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
+				return err
+			}
 
 			continue
 		}
@@ -258,8 +264,12 @@ func ZipExtractFile(archiveFilePath string, destinationPath string) (err error) 
 			return err
 		}
 
-		destinationFile.Close()
-		fileInArchive.Close()
+		if err := destinationFile.Close(); err != nil {
+			return err
+		}
+		if err := fileInArchive.Close(); err != nil {
+			return err
+		}
 	}
 
 	return nil
