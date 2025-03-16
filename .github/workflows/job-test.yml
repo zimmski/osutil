@@ -1,0 +1,39 @@
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+
+jobs:
+  test:
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jlumbroso/free-disk-space@main
+        if: contains(inputs.os, 'ubuntu')
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "<>"
+        shell: bash # Explicitly use Bash because otherwise failing Windows jobs are not erroring.
+
+      - name: Build
+        run: make install
+        shell: bash # Explicitly use Bash because otherwise failing Windows jobs are not erroring.
+
+      - name: Install testing tools
+        run: |
+          make install-tools-testing
+        shell: bash # Explicitly use Bash because otherwise failing Windows jobs are not erroring.
+
+      - name: Test
+        run: make test
+        shell: bash # Explicitly use Bash because otherwise failing Windows jobs are not erroring.
