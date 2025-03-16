@@ -29,11 +29,6 @@ jobs:
         run: make install
         shell: bash # Explicitly use Bash because otherwise failing Windows jobs are not erroring.
 
-      - name: Install testing tools
-        run: |
-          make install-tools-testing
-        shell: bash # Explicitly use Bash because otherwise failing Windows jobs are not erroring.
-
       - name: Test
         run: make test
         shell: bash # Explicitly use Bash because otherwise failing Windows jobs are not erroring.

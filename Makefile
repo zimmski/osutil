@@ -44,19 +44,11 @@ install:
 install-all: install install-tools-linting install-tools-testing
 .PHONY: install-all
 
-install-tools-linting:
-	go install -v github.com/kisielk/errcheck@v1.7.0
-.PHONY: install-tools
-
-install-tools-testing:
-	go install -v gotest.tools/gotestsum@v1.11.0
-.PHONY: install-tools
-
 lint:
-	errcheck ./...
+	go tool github.com/kisielk/errcheck ./...
 	go vet ./...
 .PHONY: lint
 
 test: # [<Go package] - # Test everything, or only the specified package.
-	gotestsum --format standard-verbose --hide-summary skipped -- $(NO_UNIT_TEST_CACHE) -race -test.timeout $(UNIT_TEST_TIMEOUT)s -test.run='$(word 2,$(ARGS))' -v $(if $(ARGS), $(word 1,$(ARGS)), $(PACKAGE))
+	go tool gotest.tools/gotestsum --format standard-verbose --hide-summary skipped -- $(NO_UNIT_TEST_CACHE) -race -test.timeout $(UNIT_TEST_TIMEOUT)s -test.run='$(word 2,$(ARGS))' -v $(if $(ARGS), $(word 1,$(ARGS)), $(PACKAGE))
 .PHONY: test
