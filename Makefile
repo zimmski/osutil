@@ -52,7 +52,7 @@ install-tools:
 .PHONY: install-tools
 
 lint:
-	$(ROOT_DIR)/scripts/lint.sh
+	PACKAGE=$(PACKAGE) $(ROOT_DIR)/scripts/lint.sh
 .PHONY: lint
 
 test:
